@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "dropbox-extended",
+  "name": "Dropbox Extended",
+  "version": "1.1.0",
+  "author": "tdhftw",
+  "license": "MIT",
+  "homepage": "https://github.com/tdhftw/omarchy-dropbox-extended",
+  "description": "Dropbox status, storage usage, recent files, and one-click access to Dropbox's own Preferences / Selective Sync windows from the Omarchy bar.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Dropbox Extended",
+    "description": "Dropbox status, storage usage, recent files, and Dropbox's own Preferences window.",
+    "category": "Files",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "refreshIntervalSec": 60,
+      "showTrayIcon": false
+    },
+    "schema": [
+      {
+        "key": "refreshIntervalSec",
+        "type": "integer",
+        "label": "Refresh interval (seconds)",
+        "min": 10,
+        "max": 3600,
+        "step": 5,
+        "defaultValue": 60
+      },
+      {
+        "key": "showTrayIcon",
+        "type": "boolean",
+        "label": "Show Dropbox's own tray icon",
+        "description": "Keep Dropbox's native status-notifier icon in the system tray alongside this widget. Requires the tray patch from this plugin's tray/install.sh.",
+        "defaultValue": false
+      }
+    ]
+  },
+  "omarchy": {
+    "clonedFrom": "omarchy.dropbox"
+  }
+}
