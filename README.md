@@ -5,7 +5,10 @@ An Omarchy bar widget for Dropbox. It is a fork of Omarchy's built-in
 reach Dropbox's *own* windows (Preferences, and therefore Selective Sync), and
 a status readout that doesn't fall over when `dropbox-cli` stops answering.
 
-![The Omarchy bar: the tray chevron, Dropbox's own tray icon recolored to the theme, then the Dropbox Extended widget](docs/bar.png)
+<p align="center">
+  <img src="docs/panel.png" alt="The widget's panel: a Dropbox hero with a pause switch, a storage line, a DROPBOX APP section with Preferences, Open Dropbox Folder and Launch Dropbox Website, a Dropbox tray icon toggle, and a recent-files list" width="380">
+  <br><sub>Recent filenames blurred for the screenshot.</sub>
+</p>
 
 ## Why
 
