@@ -21,7 +21,8 @@ Item {
   property int _desired: -1
   readonly property bool active: _desired === -1 ? running : (_desired === 1)
   property bool refreshing: false
-  property string statusText: "Checking…"
+  // statusText answers the IPC status() call, so it stays English.
+  property string statusText: "Checking…"  // i18n: ignore
   property string accountPath: ""
   property string plan: ""
   property double usedBytes: 0
@@ -94,7 +95,7 @@ Item {
   function applyStatus(raw) {
     var parsed = Model.parseStatus(raw)
     if (!parsed.ok) {
-      lastError = parsed.lastError || "Failed to read Dropbox status"
+      lastError = I18n.t("dropbox.statusParseFailed")
       return
     }
     installed = parsed.installed === true
@@ -124,7 +125,7 @@ Item {
     _loginOutput = ""
     _loginError = ""
     _loginUrlOpened = false
-    actionStatus = "Starting Dropbox login…"
+    actionStatus = I18n.t("dropbox.startingLogin")
     loginProcess.command = ["dropbox-cli", "start"]
     loginProcess.running = true
   }
@@ -188,7 +189,7 @@ Item {
     if (match && match[0]) {
       _loginUrlOpened = true
       Qt.openUrlExternally(match[0])
-      actionStatus = "Opened Dropbox login"
+      actionStatus = I18n.t("dropbox.openedLogin")
       actionStatusTimer.restart()
       return true
     }
@@ -273,7 +274,7 @@ Item {
       var stdout = String(statusStdout.text || root._statusOutput || "")
       var stderr = String(statusStderr.text || root._statusError || "")
       if (exitCode === 0) root.applyStatus(stdout)
-      else root.lastError = root.elideStatus(stderr || stdout || "Could not read Dropbox status")
+      else root.lastError = root.elideStatus(stderr || stdout || I18n.t("dropbox.statusReadFailed"))
     }
   }
 
@@ -287,7 +288,7 @@ Item {
       var combined = String(root._loginOutput || "") + "\n" + String(root._loginError || "")
       var opened = root.openAuthUrlFrom(combined)
       if (exitCode !== 0 && !opened) {
-        root.lastError = root.elideStatus(combined || "Dropbox login failed")
+        root.lastError = root.elideStatus(combined || I18n.t("dropbox.loginFailed"))
         root.actionStatus = root.lastError
       } else if (!opened) {
         root.actionStatus = ""
@@ -308,7 +309,7 @@ Item {
       var stderr = String(controlStderr.text || root._controlError || "")
       if (exitCode !== 0) {
         root._desired = -1
-        root.lastError = root.elideStatus(stderr || stdout || "Dropbox command failed")
+        root.lastError = root.elideStatus(stderr || stdout || I18n.t("dropbox.commandFailed"))
         root.actionStatus = root.lastError
       } else {
         root.lastError = ""
