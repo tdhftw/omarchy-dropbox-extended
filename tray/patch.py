@@ -33,7 +33,9 @@ TRAY_MODEL_HELPERS = '''// --- dropbox-extended --------------------------------
 var DROPBOX_WIDGET_IDS = ["omarchy.dropbox", "dropbox-extended"]
 
 function dropboxWidgetEntry(layout) {
-  var sections = ["left", "center", "right"]
+  // Every bar section a widget can sit in; sections an older shell lacks are
+  // simply absent from the layout and skipped.
+  var sections = ["left", "centerBegin", "center", "centerEnd", "right", "tray"]
   for (var s = 0; s < sections.length; s++) {
     var entries = layout && layout[sections[s]]
     if (!Array.isArray(entries)) continue
@@ -61,11 +63,14 @@ function themedItem(item, layout) {
 
 '''
 
-TRAY_MODEL_FUNCTION = '''function ownedByOmarchy(item, layout) {
-  if (itemNamed(item, "localsend")) return true
-  if (!itemNamed(item, "dropbox")) return false
-  return !!dropboxWidgetEntry(layout) && !dropboxTrayIconShown(layout)
+TRAY_MODEL_FUNCTION = '''// Dropbox is decided here; every other item keeps upstream's rules, which
+// grow with each release (LocalSend, Superwhisper, ...).
+function ownedByOmarchy(item, layout) {
+  if (itemNamed(item, "dropbox"))
+    return !!dropboxWidgetEntry(layout) && !dropboxTrayIconShown(layout)
+  return upstreamOwnedByOmarchy(item, layout)
 }
+
 '''
 
 THEMED_EFFECT = """    // dropbox-extended: a themed icon is drawn as a silhouette — the bar
@@ -116,17 +121,18 @@ def fail(message):
 
 
 def patch_tray_model(text):
-  # Replace the whole ownedByOmarchy definition rather than a line inside it, so
-  # the patch survives upstream reformatting of the function body. The comment
-  # block above it is carried along and re-emitted against the new function, so
-  # upstream's explanation does not end up stranded over this plugin's helpers.
-  pattern = re.compile(
-    r"((?:^//[^\n]*\n)*)^function ownedByOmarchy\(item, layout\) \{.*?^\}\n", re.S | re.M)
-  match = pattern.search(text)
-  if not match:
+  # Upstream's ownedByOmarchy is kept, renamed, and wrapped, rather than
+  # replaced: replacing it silently dropped whatever items upstream had added
+  # since (Superwhisper in 4.5). Only the Dropbox decision is taken over.
+  definition = "function ownedByOmarchy(item, layout) {"
+  if text.count(definition) != 1:
     fail("TrayModel.js: could not find `function ownedByOmarchy(item, layout)`")
-  text = pattern.sub(
-    lambda m: TRAY_MODEL_HELPERS + m.group(1) + TRAY_MODEL_FUNCTION, text, count=1)
+  text = text.replace(definition, "function upstreamOwnedByOmarchy(item, layout) {", 1)
+
+  guard = 'if (typeof module !== "undefined") {'
+  if guard not in text:
+    fail("TrayModel.js: could not find the module.exports guard")
+  text = text.replace(guard, TRAY_MODEL_HELPERS + TRAY_MODEL_FUNCTION + guard, 1)
 
   exports = "    ownedByOmarchy: ownedByOmarchy"
   if exports not in text:
@@ -182,9 +188,14 @@ def patch_tray_qml(text):
       colorization: 1.0
       colorizationColor: root.foreground
     }"""
-  if effect not in text:
-    fail("Tray.qml: could not find TrayIcon's recoloring MultiEffect")
-  text = text.replace(effect, THEMED_EFFECT, 1)
+  if effect in text:
+    # Omarchy < 4.5 tinted symbolic icons, which leaves a full-color logo muddy;
+    # swap in a silhouette for themed items.
+    text = text.replace(effect, THEMED_EFFECT, 1)
+  elif "maskSource: trayIconImage" not in text:
+    # 4.5+ already draws every symbolic icon as a silhouette, so a themed item
+    # needs nothing beyond counting as symbolic. Anything else is unknown.
+    fail("Tray.qml: could not find TrayIcon's recoloring effect")
 
   # Feed each TrayIcon the item its icon came from. Both call sites already have
   # `modelData` in scope; indentation is copied from the icon line.
