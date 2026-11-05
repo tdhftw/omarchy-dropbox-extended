@@ -31,19 +31,26 @@ the pause/resume toggle useless exactly when you'd want it.
   D-Bus (`com.canonical.dbusmenu`). Only the entries your client actually offers
   are listed.
 - **Status and pause/resume from the tray menu**, with `dropbox-cli` kept as a
-  fallback. This keeps working through the wedged-socket failure above.
+  fallback. This keeps working through the wedged-socket failure above. While
+  Dropbox is not yet linked to an account, the fallback checks the daemon's pid
+  instead of calling `dropbox-cli status`, which would void the pending login
+  link (the same fix stock Omarchy made in 4.5).
 - **Optional native tray icon.** Off by default, because this widget stands in
   for it. Turn it on and it comes back — recolored to the bar foreground so it
   follows your Omarchy theme instead of showing Dropbox's blue-and-white PNG.
   Needs the tray patch below.
 - Keyboard shortcuts for all of it, and IPC methods you can bind to keys.
 
-Everything else — storage summary, recent files, login flow, the hero switch —
-is the stock widget's, and stays.
+Everything else (storage summary, recent files, login flow, the hero switch)
+is the stock widget's, and stays. The stock text follows Omarchy's language
+setting; the rows this plugin adds are in English only.
 
 ## Requirements
 
-- Omarchy 4.x
+- Omarchy 4.5 or later. The widget is kept in step with the stock one and uses
+  shell APIs that arrived in 4.5 (lazily built panel content, `ShellIpc`,
+  translations). On Omarchy 4.0, check out `076ae6c`, the last 4.0 version
+  (1.1.0)
 - The official Dropbox client, running
 - `python3` (already on any Omarchy system)
 - `dropbox-cli` is optional; it is only used as a fallback
@@ -89,13 +96,22 @@ the tray-icon row out.
 
 What the patch changes:
 
-1. `TrayModel.js` — Dropbox's tray item is hidden while a Dropbox widget is in
+1. `TrayModel.js`: Dropbox's tray item is hidden while a Dropbox widget is in
    the bar (this is what stock Omarchy already does for `omarchy.dropbox`),
-   unless `showTrayIcon` is set on that widget's layout entry.
-2. `Tray.qml` — a shown Dropbox item is drawn as a silhouette: the bar
-   foreground poured through the icon's own alpha. It is also pinned rather
-   than filed into the collapsed drawer, because Dropbox's tray id carries the
-   daemon's pid and a hand-pinned entry never survives a restart.
+   unless `showTrayIcon` is set on that widget's layout entry. Stock
+   `ownedByOmarchy` is kept and wrapped, not replaced, so the items the stock
+   tray handles itself (LocalSend, Superwhisper in 4.5) keep their rules.
+2. `Tray.qml`: a shown Dropbox item is drawn as a silhouette, the bar
+   foreground poured through the icon's own alpha. Omarchy 4.5 draws symbolic
+   icons this way already, so there the patch only marks Dropbox's icon as
+   symbolic; on older trays it installs the effect itself. The item is also
+   pinned rather than filed into the collapsed drawer, because Dropbox's tray
+   id carries the daemon's pid and a hand-pinned entry never survives a
+   restart.
+
+[omarchy-tray-recolor](https://github.com/tdhftw/omarchy-tray-recolor), which
+recolors other monochrome tray icons, layers on top of this patch. Apply this
+one first, then that one.
 
 Dropbox only ships its status icons at 16×16, so the tray icon is a little soft
 on a HiDPI screen. Nothing this plugin can fix.
@@ -141,7 +157,7 @@ omarchy-shell dropbox-extended status         # print the current status line
 omarchy-shell dropbox-extended refresh
 omarchy-shell dropbox-extended login
 omarchy-shell dropbox-extended toggle         # toggle the panel
-omarchy-shell dropbox-extended trayIcon on    # on | off | (empty to flip)
+omarchy-shell dropbox-extended trayIcon on    # on | off; anything else flips it
 ```
 
 Handy as a Hyprland binding, since Dropbox has no CLI for its Preferences
@@ -173,7 +189,12 @@ omarchy plugin update dropbox-extended
 ```
 
 After an `omarchy update`, re-run `./tray/install.sh --refresh` if you use the
-tray patch.
+tray patch. If it reports a missing anchor, the stock tray changed shape;
+update this plugin first, since a fix for the new tray may already be here.
+
+When Omarchy changes its own Dropbox widget, this repo merges those changes in
+(1.2.0 brings in Omarchy 4.5), so `omarchy plugin update` is how you pick them
+up.
 
 ## Uninstall
 
