@@ -49,8 +49,15 @@ setting; the rows this plugin adds are in English only.
 
 - Omarchy 4.5 or later. The widget is kept in step with the stock one and uses
   shell APIs that arrived in 4.5 (lazily built panel content, `ShellIpc`,
-  translations). On Omarchy 4.0, check out `076ae6c`, the last 4.0 version
-  (1.1.0)
+  translations). On Omarchy 4.0, stay on the `v1.1.0` tag, the last 4.0
+  version:
+
+  ```bash
+  git -C ~/.config/omarchy/plugins/dropbox-extended checkout v1.1.0
+  ```
+
+  `omarchy plugin update` would move you back to the latest version, so skip it
+  until you are on 4.5
 - The official Dropbox client, running
 - `python3` (already on any Omarchy system)
 - `dropbox-cli` is optional; it is only used as a fallback
